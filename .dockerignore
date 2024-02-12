@@ -1,0 +1,12 @@
+.eslintrc
+*.log
+*.md
+*.txt
+.gitignore
+.gitattributes
+.gitmodules
+.gitkeep
+.git
+.nvmrc
+.npmrc
+.stylelintrc

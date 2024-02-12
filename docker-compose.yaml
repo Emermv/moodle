@@ -1,0 +1,64 @@
+version: '3.5'
+services:
+  traefik:
+    # The official v2 Traefik docker image
+    image: traefik:v2.10
+    container_name: proxy
+    restart: always
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "7080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock  
+  mariadb:
+      image: docker.io/bitnami/mariadb:11.2
+      ports:
+        - '3306:3306'
+      environment:
+        - MARIADB_USER=${DATABASE_USERNAME}
+        - MARIADB_ROOT_PASSWORD=${DATABASE_PASSWORD}
+        - MARIADB_PASSWORD=${DATABASE_PASSWORD}
+        - MARIADB_DATABASE=${DATABASE_NAME}
+        - MARIADB_CHARACTER_SET=utf8mb4
+        - MARIADB_COLLATE=utf8mb4_unicode_ci
+      volumes:
+        - ./data/database:/bitnami/mariadb
+  moodle:
+      image: docker.io/bitnami/moodle:4.3
+      container_name: moodle-app
+      labels:
+        - "traefik.http.routers.moodle.rule=Host(`moodle.docker.localhost`)"
+        - "traefik.http.services.moodle-service.loadbalancer.server.port=8080"
+        - "traefik.http.routers.moodle.service=moodle-service"      
+      restart: always      
+      ports:
+        - '8080:8080'
+      environment:
+        - MOODLE_DATABASE_HOST=${DATABASE_HOST}
+        - MOODLE_DATABASE_PORT_NUMBER=3306
+        - MOODLE_DATABASE_USER=${DATABASE_USERNAME}
+        - MOODLE_DATABASE_NAME=${DATABASE_NAME}
+        - MOODLE_DATABASE_PASSWORD=${DATABASE_PASSWORD}
+        - MOODLE_HOST=${MOODLE_HOST}
+        - MOODLE_REVERSEPROXY=true
+        - MOODLE_SSLPROXY=false
+        - MOODLE_LANG=es
+        - MOODLE_USERNAME=${MOODLE_USERNAME}
+        - MOODLE_PASSWORD=${MOODLE_PASSWORD}
+        - MOODLE_SITE_NAME=${MOODLE_SITE_NAME}  
+      volumes:            
+        - ./data/moodle:/bitnami/moodle
+        - ./data/moodledata:/bitnami/moodledata
+      depends_on:
+        - mariadb
+
+networks:
+ default:
+    name: moodle-network   
+    external: true
+        

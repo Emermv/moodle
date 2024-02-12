@@ -1,0 +1,1 @@
+git clone -b MOODLE_403_STABLE git://git.moodle.org/moodle.git
